@@ -12,50 +12,23 @@ import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.configuration.datafileaccessors.CameraProfileContainer;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.datafileaccessors.RoboxProfileSettingsContainer;
-import celtech.roboxbase.configuration.fileRepresentation.CameraProfile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
-import celtech.roboxbase.configuration.fileRepresentation.TimelapseSettings;
 import celtech.roboxbase.configuration.utils.RoboxProfileUtils;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterListChangesAdapter;
 import celtech.roboxbase.printerControl.model.PrinterListChangesListener;
-import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorTask;
+import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.utils.models.MeshForProcessing;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
 import celtech.roboxbase.utils.threed.CentreCalculations;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.ReadOnlyDoubleProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -67,6 +40,12 @@ import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /**
  * GCodePreparationManager deals with {@link GCodeGeneratorTask}s.
@@ -108,7 +87,7 @@ public class GCodeGeneratorManager implements ModelContainerProject.ProjectChang
     
     private ObjectProperty<PrintQualityEnumeration> currentPrintQuality = new SimpleObjectProperty<>(PrintQualityEnumeration.DRAFT);
     private List<PrintQualityEnumeration> slicingOrder = Arrays.asList(PrintQualityEnumeration.values()); 
-    private GCodeGeneratorTask selectedTask;
+    private celtech.roboxbase.services.gcodegenerator.GCodeGeneratorTask selectedTask;
     
     private ChangeListener applicationModeChangeListener;
     private ChangeListener selectedPrinterReactionChangeListener;

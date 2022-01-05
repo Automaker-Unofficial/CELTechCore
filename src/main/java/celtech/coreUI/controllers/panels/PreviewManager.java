@@ -18,8 +18,6 @@ import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.services.gcodepreview.GCodePreviewExecutorService;
 import celtech.services.gcodepreview.GCodePreviewTask;
-import java.util.Optional;
-import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -29,6 +27,8 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
+
+import java.util.Optional;
 
 /**
  * FXML Controller class

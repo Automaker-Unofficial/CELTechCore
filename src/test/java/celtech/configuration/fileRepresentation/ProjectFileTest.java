@@ -4,8 +4,9 @@ import celtech.ConfiguredTest;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import static org.junit.Assert.*;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -40,7 +41,7 @@ public class ProjectFileTest extends ConfiguredTest
                     = new ProjectFileDeserialiser();
             SimpleModule module
                     = new SimpleModule("LegacyProjectFileDeserialiserModule",
-                            new Version(1, 0, 0, null));
+                            new Version(1, 0, 0, null, null, null));
             module.addDeserializer(ProjectFile.class, deserializer);
 
             ObjectMapper mapper = new ObjectMapper();
@@ -63,7 +64,7 @@ public class ProjectFileTest extends ConfiguredTest
                 = new ProjectFileDeserialiser();
         SimpleModule module
                 = new SimpleModule("LegacyProjectFileDeserialiserModule",
-                        new Version(1, 0, 0, null));
+                        new Version(1, 0, 0, null, null, null));
         module.addDeserializer(ProjectFile.class, deserializer);
 
         ObjectMapper mapper = new ObjectMapper();

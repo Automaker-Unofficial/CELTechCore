@@ -29,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -51,17 +53,13 @@ import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
 /**
- *
  * @author Ian Hudson @ Liberty Systems Limited
  */
-public abstract class Project
-{
+public abstract class Project {
 
-    public static class ProjectLoadException extends Exception
-    {
+    public static class ProjectLoadException extends Exception {
 
-        public ProjectLoadException(String message)
-        {
+        public ProjectLoadException(String message) {
             super(message);
         }
     }
@@ -76,7 +74,7 @@ public abstract class Project
     protected BooleanProperty customSettingsNotChosen;
 
     protected final PrinterSettingsOverrides printerSettings;
-    
+
     protected final TimelapseSettingsData timelapseSettings;
 
     protected final StringProperty projectNameProperty;
@@ -90,13 +88,12 @@ public abstract class Project
     protected ObservableList<ProjectifiableThing> topLevelThings;
 
     protected String lastPrintJobID = "";
-    
+
     protected boolean projectNameModified = false;
-    
+
     private GCodeGeneratorManager gCodeGenManager;
 
-    public Project()
-    {
+    public Project() {
         topLevelThings = FXCollections.observableArrayList();
 
         initialise();
@@ -114,10 +111,10 @@ public abstract class Project
         lastModifiedDate.set(now);
 
         gCodeGenManager = new GCodeGeneratorManager(this);
-        
+
         customSettingsNotChosen.bind(
                 printerSettings.printQualityProperty().isEqualTo(PrintQualityEnumeration.CUSTOM)
-                .and(printerSettings.getSettingsNameProperty().isEmpty()));
+                        .and(printerSettings.getSettingsNameProperty().isEmpty()));
         // Cannot print if quality is CUSTOM and no custom settings have been chosen
         canPrint.bind(customSettingsNotChosen.not().and(gCodeGenManager.printOrSaveTaskRunningProperty().not()));
 
@@ -145,24 +142,20 @@ public abstract class Project
 
     protected abstract void initialise();
 
-    public final void setProjectName(String value)
-    {
+    public final void setProjectName(String value) {
         projectNameProperty.set(value);
     }
 
-    public final String getProjectName()
-    {
+    public final String getProjectName() {
         return projectNameProperty.get();
     }
 
-    public final StringProperty projectNameProperty()
-    {
+    public final StringProperty projectNameProperty() {
         return projectNameProperty;
     }
 
-    public final String getAbsolutePath()
-    {
-        return ApplicationConfiguration.getProjectDirectory() 
+    public final String getAbsolutePath() {
+        return ApplicationConfiguration.getProjectDirectory()
                 + File.separator
                 + getProjectName()
                 + File.separator
@@ -172,35 +165,30 @@ public abstract class Project
 
     protected abstract void load(ProjectFile projectFile, String basePath) throws ProjectLoadException;
 
-    public static final Project loadProject(String basePath)
-    {
+    public static final Project loadProject(String basePath) {
         Project project = null;
         File file = new File(basePath + ApplicationConfiguration.projectFileExtension);
 
-        try
-        {
+        try {
             ProjectFileDeserialiser deserializer
                     = new ProjectFileDeserialiser();
             SimpleModule module
                     = new SimpleModule("LegacyProjectFileDeserialiserModule",
-                            new Version(1, 0, 0, null));
+                    new Version(1, 0, 0, null, null, null));
             module.addDeserializer(ProjectFile.class, deserializer);
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(module);
             ProjectFile projectFile = mapper.readValue(file, ProjectFile.class);
 
-            if (projectFile instanceof ModelContainerProjectFile)
-            {
+            if (projectFile instanceof ModelContainerProjectFile) {
                 project = new ModelContainerProject();
                 project.load(projectFile, basePath);
-            } else if (projectFile instanceof ShapeContainerProjectFile)
-            {
+            } else if (projectFile instanceof ShapeContainerProjectFile) {
                 project = new ShapeContainerProject();
                 project.load(projectFile, basePath);
             }
-        } catch (Exception ex)
-        {
+        } catch (Exception ex) {
             steno.exception("Unable to load project file at " + basePath, ex);
         }
         return project;
@@ -208,11 +196,9 @@ public abstract class Project
 
     protected abstract void save(String basePath);
 
-    public static final void saveProject(Project project)
-    {
-        if (project != null)
-        {
-            String basePath = ApplicationConfiguration.getProjectDirectory() 
+    public static final void saveProject(Project project) {
+        if (project != null) {
+            String basePath = ApplicationConfiguration.getProjectDirectory()
                     + File.separator
                     + project.getProjectName()
                     + File.separator;
@@ -227,32 +213,26 @@ public abstract class Project
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return projectNameProperty.get();
     }
 
-    public final PrintQualityEnumeration getPrintQuality()
-    {
+    public final PrintQualityEnumeration getPrintQuality() {
         return printerSettings.getPrintQuality();
     }
 
-    public final void setPrintQuality(PrintQualityEnumeration printQuality)
-    {
-        if (printerSettings.getPrintQuality() != printQuality)
-        {
+    public final void setPrintQuality(PrintQualityEnumeration printQuality) {
+        if (printerSettings.getPrintQuality() != printQuality) {
             projectModified();
             printerSettings.setPrintQuality(printQuality);
         }
     }
 
-    public final PrinterSettingsOverrides getPrinterSettings()
-    {
+    public final PrinterSettingsOverrides getPrinterSettings() {
         return printerSettings;
     }
 
-    public final TimelapseSettingsData getTimelapseSettings()
-    {
+    public final TimelapseSettingsData getTimelapseSettings() {
         return timelapseSettings;
     }
 
@@ -260,43 +240,36 @@ public abstract class Project
 
     public abstract void removeModels(Set<ProjectifiableThing> projectifiableThings);
 
-    public final void addProjectChangesListener(ProjectChangesListener projectChangesListener)
-    {
+    public final void addProjectChangesListener(ProjectChangesListener projectChangesListener) {
         projectChangesListeners.add(projectChangesListener);
     }
 
-    public final void removeProjectChangesListener(ProjectChangesListener projectChangesListener)
-    {
+    public final void removeProjectChangesListener(ProjectChangesListener projectChangesListener) {
         projectChangesListeners.remove(projectChangesListener);
     }
 
-    public final ObjectProperty<Date> getLastModifiedDate()
-    {
+    public final ObjectProperty<Date> getLastModifiedDate() {
         return lastModifiedDate;
     }
 
-    public final BooleanProperty canPrintProperty()
-    {
+    public final BooleanProperty canPrintProperty() {
         return canPrint;
     }
 
-    public final BooleanProperty customSettingsNotChosenProperty()
-    {
+    public final BooleanProperty customSettingsNotChosenProperty() {
         return customSettingsNotChosen;
     }
 
 
-    public ObservableList<Boolean> getUsedExtruders(Printer printer)
-    {
+    public ObservableList<Boolean> getUsedExtruders(Printer printer) {
         List<Boolean> localUsedExtruders = new ArrayList<>();
         localUsedExtruders.add(false);
         localUsedExtruders.add(false);
-        
+
         return FXCollections.observableArrayList(localUsedExtruders);
     }
-    
-    protected void loadTimelapseSettings(ProjectFile pFile) 
-    {
+
+    protected void loadTimelapseSettings(ProjectFile pFile) {
         timelapseSettings.setTimelapseTriggerEnabled(pFile.isTimelapseTriggerEnabled());
         String profileName = pFile.getTimelapseProfileName();
         if (profileName.isBlank())
@@ -313,12 +286,11 @@ public abstract class Project
                 try {
                     int cameraNumber = Integer.parseInt(fields[1]);
                     camera = BaseLookup.getConnectedCameras()
-                                       .stream()
-                                       .filter(c -> c.getCameraName().equals(cameraName) &&
-                                                    c.getCameraNumber() == cameraNumber)
-                                       .findFirst();
-                }
-                catch (NumberFormatException ex) {
+                            .stream()
+                            .filter(c -> c.getCameraName().equals(cameraName) &&
+                                    c.getCameraNumber() == cameraNumber)
+                            .findFirst();
+                } catch (NumberFormatException ex) {
                 }
             }
         }
@@ -329,8 +301,7 @@ public abstract class Project
      * ProjectChangesListener allows other objects to observe when models are
      * added or removed etc to the project.
      */
-    public interface ProjectChangesListener
-    {
+    public interface ProjectChangesListener {
 
         /**
          * This should be fired when a model is added to the project.
@@ -399,10 +370,8 @@ public abstract class Project
      * @param projectifiableThings
      * @param ratio
      */
-    public final void scaleXYZRatioSelection(Set<ScaleableThreeD> projectifiableThings, double ratio)
-    {
-        for (ScaleableThreeD projectifiableThing : projectifiableThings)
-        {
+    public final void scaleXYZRatioSelection(Set<ScaleableThreeD> projectifiableThings, double ratio) {
+        for (ScaleableThreeD projectifiableThing : projectifiableThings) {
             projectifiableThing.setXScale(projectifiableThing.getXScale() * ratio, true);
             projectifiableThing.setYScale(projectifiableThing.getYScale() * ratio, true);
             projectifiableThing.setZScale(projectifiableThing.getZScale() * ratio, true);
@@ -419,10 +388,8 @@ public abstract class Project
      * @param projectifiableThings
      * @param ratio
      */
-    public final void scaleXYRatioSelection(Set<ScaleableTwoD> projectifiableThings, double ratio)
-    {
-        for (ScaleableTwoD projectifiableThing : projectifiableThings)
-        {
+    public final void scaleXYRatioSelection(Set<ScaleableTwoD> projectifiableThings, double ratio) {
+        for (ScaleableTwoD projectifiableThing : projectifiableThings) {
             projectifiableThing.setXScale(projectifiableThing.getXScale() * ratio, true);
             projectifiableThing.setYScale(projectifiableThing.getYScale() * ratio, true);
         }
@@ -431,25 +398,19 @@ public abstract class Project
     }
 
     public final void scaleXModels(Set<ScaleableTwoD> projectifiableThings, double newScale,
-            boolean preserveAspectRatio)
-    {
-        if (preserveAspectRatio)
-        {
+                                   boolean preserveAspectRatio) {
+        if (preserveAspectRatio) {
             // this only happens for non-multiselect
             assert (projectifiableThings.size() == 1);
             ScaleableTwoD projectifiableThing = projectifiableThings.iterator().next();
             double ratio = newScale / projectifiableThing.getXScale();
-            if (projectifiableThing instanceof ScaleableThreeD)
-            {
+            if (projectifiableThing instanceof ScaleableThreeD) {
                 scaleXYZRatioSelection((Set) projectifiableThings, ratio);
-            } else
-            {
+            } else {
                 scaleXYRatioSelection(projectifiableThings, ratio);
             }
-        } else
-        {
-            for (ScaleableTwoD projectifiableThing : projectifiableThings)
-            {
+        } else {
+            for (ScaleableTwoD projectifiableThing : projectifiableThings) {
                 {
                     projectifiableThing.setXScale(newScale, true);
                 }
@@ -460,26 +421,20 @@ public abstract class Project
     }
 
     public final void scaleYModels(Set<ScaleableTwoD> projectifiableThings, double newScale,
-            boolean preserveAspectRatio)
-    {
-        if (preserveAspectRatio)
-        {
+                                   boolean preserveAspectRatio) {
+        if (preserveAspectRatio) {
             // this only happens for non-multiselect
             assert (projectifiableThings.size() == 1);
             ScaleableTwoD projectifiableThing = projectifiableThings.iterator().next();
             double ratio = newScale / projectifiableThing.getYScale();
 
-            if (projectifiableThing instanceof ScaleableThreeD)
-            {
+            if (projectifiableThing instanceof ScaleableThreeD) {
                 scaleXYZRatioSelection((Set) projectifiableThings, ratio);
-            } else
-            {
+            } else {
                 scaleXYRatioSelection(projectifiableThings, ratio);
             }
-        } else
-        {
-            for (ScaleableTwoD projectifiableThing : projectifiableThings)
-            {
+        } else {
+            for (ScaleableTwoD projectifiableThing : projectifiableThings) {
                 {
                     projectifiableThing.setYScale(newScale, true);
                 }
@@ -490,19 +445,15 @@ public abstract class Project
     }
 
     public final void scaleZModels(Set<ScaleableThreeD> projectifiableThings, double newScale,
-            boolean preserveAspectRatio)
-    {
-        if (preserveAspectRatio)
-        {
+                                   boolean preserveAspectRatio) {
+        if (preserveAspectRatio) {
             // this only happens for non-multiselect
             assert (projectifiableThings.size() == 1);
             ScaleableThreeD projectifiableThing = projectifiableThings.iterator().next();
             double ratio = newScale / projectifiableThing.getZScale();
             scaleXYZRatioSelection(projectifiableThings, ratio);
-        } else
-        {
-            for (ScaleableThreeD projectifiableThing : projectifiableThings)
-            {
+        } else {
+            for (ScaleableThreeD projectifiableThing : projectifiableThings) {
                 {
                     projectifiableThing.setZScale(newScale, true);
                 }
@@ -512,10 +463,8 @@ public abstract class Project
         fireWhenModelsTransformed((Set) projectifiableThings);
     }
 
-    public void translateModelsBy(Set<TranslateableTwoD> modelContainers, double x, double y)
-    {
-        for (TranslateableTwoD model : modelContainers)
-        {
+    public void translateModelsBy(Set<TranslateableTwoD> modelContainers, double x, double y) {
+        for (TranslateableTwoD model : modelContainers) {
             model.translateBy(x, y);
         }
         projectModified();
@@ -523,20 +472,16 @@ public abstract class Project
         fireWhenModelsTransformed((Set) modelContainers);
     }
 
-    public void translateModelsTo(Set<TranslateableTwoD> modelContainers, double x, double y)
-    {
-        for (TranslateableTwoD model : modelContainers)
-        {
+    public void translateModelsTo(Set<TranslateableTwoD> modelContainers, double x, double y) {
+        for (TranslateableTwoD model : modelContainers) {
             model.translateTo(x, y);
         }
         projectModified();
         fireWhenModelsTransformed((Set) modelContainers);
     }
 
-    public void translateModelsXTo(Set<TranslateableTwoD> modelContainers, double x)
-    {
-        for (TranslateableTwoD model : modelContainers)
-        {
+    public void translateModelsXTo(Set<TranslateableTwoD> modelContainers, double x) {
+        for (TranslateableTwoD model : modelContainers) {
             model.translateXTo(x);
         }
         projectModified();
@@ -544,10 +489,8 @@ public abstract class Project
         fireWhenModelsTransformed((Set) modelContainers);
     }
 
-    public void translateModelsDepthPositionTo(Set<Translateable> modelContainers, double z)
-    {
-        for (Translateable model : modelContainers)
-        {
+    public void translateModelsDepthPositionTo(Set<Translateable> modelContainers, double z) {
+        for (Translateable model : modelContainers) {
             model.translateDepthPositionTo(z);
         }
         projectModified();
@@ -555,10 +498,8 @@ public abstract class Project
         fireWhenModelsTransformed((Set) modelContainers);
     }
 
-    public void resizeModelsDepth(Set<ResizeableThreeD> modelContainers, double depth)
-    {
-        for (ResizeableThreeD model : modelContainers)
-        {
+    public void resizeModelsDepth(Set<ResizeableThreeD> modelContainers, double depth) {
+        for (ResizeableThreeD model : modelContainers) {
             model.resizeDepth(depth);
         }
         projectModified();
@@ -566,10 +507,8 @@ public abstract class Project
         fireWhenModelsTransformed((Set) modelContainers);
     }
 
-    public void resizeModelsHeight(Set<ResizeableTwoD> modelContainers, double height)
-    {
-        for (ResizeableTwoD model : modelContainers)
-        {
+    public void resizeModelsHeight(Set<ResizeableTwoD> modelContainers, double height) {
+        for (ResizeableTwoD model : modelContainers) {
             model.resizeHeight(height);
         }
         projectModified();
@@ -577,10 +516,8 @@ public abstract class Project
         fireWhenModelsTransformed((Set) modelContainers);
     }
 
-    public void resizeModelsWidth(Set<ResizeableTwoD> modelContainers, double width)
-    {
-        for (ResizeableTwoD model : modelContainers)
-        {
+    public void resizeModelsWidth(Set<ResizeableTwoD> modelContainers, double width) {
+        for (ResizeableTwoD model : modelContainers) {
             model.resizeWidth(width);
         }
         projectModified();
@@ -590,25 +527,19 @@ public abstract class Project
 
     public abstract Set<ProjectifiableThing> getAllModels();
 
-    public final Set<ItemState> getModelStates()
-    {
+    public final Set<ItemState> getModelStates() {
         Set<ItemState> states = new HashSet<>();
-        for (ProjectifiableThing model : getAllModels())
-        {
+        for (ProjectifiableThing model : getAllModels()) {
             states.add(model.getState());
         }
         return states;
     }
 
-    public final void setModelStates(Set<ItemState> modelStates)
-    {
+    public final void setModelStates(Set<ItemState> modelStates) {
         Set<ProjectifiableThing> modelContainers = new HashSet<>();
-        for (ItemState modelState : modelStates)
-        {
-            for (ProjectifiableThing model : getAllModels())
-            {
-                if (model.getModelId() == modelState.modelId)
-                {
+        for (ItemState modelState : modelStates) {
+            for (ProjectifiableThing model : getAllModels()) {
+                if (model.getModelId() == modelState.modelId) {
                     model.setState(modelState);
                     model.updateOriginalModelBounds();
                     modelContainers.add(model);
@@ -619,25 +550,20 @@ public abstract class Project
         fireWhenModelsTransformed(modelContainers);
     }
 
-    public final ReadOnlyObjectProperty<ProjectMode> getModeProperty()
-    {
+    public final ReadOnlyObjectProperty<ProjectMode> getModeProperty() {
         return mode;
     }
 
-    public ProjectMode getMode()
-    {
+    public ProjectMode getMode() {
         return mode.get();
     }
 
-    public final void setMode(ProjectMode mode)
-    {
+    public final void setMode(ProjectMode mode) {
         this.mode.set(mode);
     }
 
-    protected final void projectModified()
-    {
-        if (!suppressProjectChanged)
-        {
+    protected final void projectModified() {
+        if (!suppressProjectChanged) {
             projectSaved = false;
             lastPrintJobID = "";
             lastModifiedDate.set(new Date());
@@ -650,38 +576,31 @@ public abstract class Project
 
     abstract protected void fireWhenTimelapseSettingsChanged(TimelapseSettingsData timelapseSettings);
 
-    public int getNumberOfProjectifiableElements()
-    {
+    public int getNumberOfProjectifiableElements() {
         return getAllModels().size();
     }
 
-    public ObservableList<ProjectifiableThing> getTopLevelThings()
-    {
+    public ObservableList<ProjectifiableThing> getTopLevelThings() {
         return topLevelThings;
     }
 
-    public void setLastPrintJobID(String lastPrintJobID)
-    {
+    public void setLastPrintJobID(String lastPrintJobID) {
         this.lastPrintJobID = lastPrintJobID;
     }
 
-    public String getLastPrintJobID()
-    {
+    public String getLastPrintJobID() {
         return lastPrintJobID;
     }
 
-    public boolean isProjectNameModified()
-    {
+    public boolean isProjectNameModified() {
         return projectNameModified;
     }
 
-    public void setProjectNameModified(boolean projectNameModified)
-    {
+    public void setProjectNameModified(boolean projectNameModified) {
         this.projectNameModified = projectNameModified;
     }
 
-    public ModelGroup group(Set<Groupable> modelContainers)
-    {
+    public ModelGroup group(Set<Groupable> modelContainers) {
         Set<ProjectifiableThing> projectifiableThings = (Set) modelContainers;
 
         removeModels(projectifiableThings);
@@ -690,8 +609,7 @@ public abstract class Project
         return modelGroup;
     }
 
-    public ModelGroup group(Set<Groupable> modelContainers, int groupModelId)
-    {
+    public ModelGroup group(Set<Groupable> modelContainers, int groupModelId) {
         Set<ProjectifiableThing> projectifiableThings = (Set) modelContainers;
 
         removeModels(projectifiableThings);
@@ -707,8 +625,7 @@ public abstract class Project
      * @param groupModelId
      * @return
      */
-    public ModelGroup createNewGroup(Set<Groupable> modelContainers, int groupModelId)
-    {
+    public ModelGroup createNewGroup(Set<Groupable> modelContainers, int groupModelId) {
         checkNotAlreadyInGroup(modelContainers);
         ModelGroup modelGroup = new ModelGroup((Set) modelContainers, groupModelId);
         modelGroup.checkOffBed();
@@ -722,8 +639,7 @@ public abstract class Project
      * @param modelContainers
      * @return
      */
-    public ModelGroup createNewGroup(Set<Groupable> modelContainers)
-    {
+    public ModelGroup createNewGroup(Set<Groupable> modelContainers) {
         checkNotAlreadyInGroup(modelContainers);
 
         ModelGroup modelGroup = new ModelGroup((Set) modelContainers);
@@ -732,20 +648,16 @@ public abstract class Project
         return modelGroup;
     }
 
-    public void ungroup(Set<? extends ModelContainer> modelContainers)
-    {
+    public void ungroup(Set<? extends ModelContainer> modelContainers) {
         List<ProjectifiableThing> ungroupedModels = new ArrayList<>();
 
-        for (ModelContainer modelContainer : modelContainers)
-        {
-            if (modelContainer instanceof ModelGroup)
-            {
+        for (ModelContainer modelContainer : modelContainers) {
+            if (modelContainer instanceof ModelGroup) {
                 ModelGroup modelGroup = (ModelGroup) modelContainer;
                 Set<ProjectifiableThing> modelGroups = new HashSet<>();
                 modelGroups.add(modelGroup);
                 removeModels(modelGroups);
-                for (ModelContainer childModelContainer : modelGroup.getChildModelContainers())
-                {
+                for (ModelContainer childModelContainer : modelGroup.getChildModelContainers()) {
                     addModel(childModelContainer);
                     childModelContainer.setBedCentreOffsetTransform();
                     childModelContainer.applyGroupTransformToThis(modelGroup);
@@ -770,28 +682,23 @@ public abstract class Project
     public abstract ModelGroup createNewGroupAndAddModelListeners(Set<Groupable> modelContainers);
 
     @JsonIgnore
-    public void invalidate()
-    {
+    public void invalidate() {
         projectModified();
     }
-    
-    public GCodeGeneratorManager getGCodeGenManager()
-    {
+
+    public GCodeGeneratorManager getGCodeGenManager() {
         return gCodeGenManager;
     }
-    
-    public void close()
-    {
+
+    public void close() {
         gCodeGenManager.shutdown();
     }
-    
-    public boolean isProjectSaved()
-    {
+
+    public boolean isProjectSaved() {
         return projectSaved;
     }
-    
-    public void setProjectSaved(boolean projectSaved)
-    {
+
+    public void setProjectSaved(boolean projectSaved) {
         this.projectSaved = projectSaved;
     }
 }

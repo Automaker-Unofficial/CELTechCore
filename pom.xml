@@ -15,6 +15,9 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <compilerArgs>
+                        <arg>${jvm.options}</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
@@ -219,11 +222,6 @@
             <artifactId>woodstox-core-asl</artifactId>
             <version>4.4.1</version>
         </dependency>
-        <!--        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.12</version>
-        </dependency>-->
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-bridge</artifactId>
@@ -239,6 +237,12 @@
             <artifactId>poly2tri-core</artifactId>
             <version>0.1.2</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>win</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

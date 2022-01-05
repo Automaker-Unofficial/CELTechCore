@@ -97,7 +97,7 @@ public class TextFieldWithButtonSkin extends TextFieldSkin{
     protected void layoutChildren(double x, double y, double w, double h) {
         super.layoutChildren(x, y, w, h);
 
-        final double clearGraphicWidth = snapSize(rightButtonGraphic.prefWidth(-1));
+        final double clearGraphicWidth = snapSizeX(rightButtonGraphic.prefWidth(-1));
         final double clearButtonWidth = rightButton.snappedLeftInset() + clearGraphicWidth + rightButton.snappedRightInset();
 
         rightButton.resize(clearButtonWidth, h);

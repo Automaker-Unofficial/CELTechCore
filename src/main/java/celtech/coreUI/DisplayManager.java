@@ -1,12 +1,7 @@
 package celtech.coreUI;
 
 import celtech.Lookup;
-import celtech.appManager.ApplicationMode;
-import celtech.appManager.ApplicationStatus;
-import celtech.appManager.ModelContainerProject;
-import celtech.appManager.Project;
-import celtech.appManager.ProjectCallback;
-import celtech.appManager.ProjectManager;
+import celtech.appManager.*;
 import celtech.appManager.undo.CommandStack;
 import celtech.appManager.undo.UndoableProject;
 import celtech.configuration.ApplicationConfiguration;
@@ -34,19 +29,7 @@ import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.fileRepresentation.CameraProfile;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterIdentity;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -57,23 +40,13 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SingleSelectionModel;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.*;
 import javafx.scene.effect.Glow;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -81,13 +54,20 @@ import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+
 /**
- *
  * @author Ian Hudson @ Liberty Systems Limited
  */
 public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListener, UnhandledKeyListener, SpinnerControl,
-        ProjectCallback
-{
+        ProjectCallback {
 
     private static final Stenographer steno = StenographerFactory.getStenographer(
             DisplayManager.class.getName());
@@ -136,11 +116,10 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
 
     //Display scaling
     private BooleanProperty nodesMayHaveMoved;
-    
+
     private final BooleanProperty libraryModeEntered = new SimpleBooleanProperty(false);
 
-    public enum DisplayScalingMode
-    {
+    public enum DisplayScalingMode {
 
         NORMAL,
         SHORT,
@@ -155,8 +134,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
     // If other things need to be added, it should be changed to a more generic callback mechanism.
     private PreviewManager previewManager = null;
 
-    private DisplayManager()
-    {
+    private DisplayManager() {
         this.rootStackPane = new StackPane();
         this.nodesMayHaveMoved = new SimpleBooleanProperty(false);
         this.insetPanelControllers = new HashMap<>();
@@ -172,21 +150,19 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         steno.debug("Starting AutoMaker - initialising display manager...");
         steno.debug("Starting AutoMaker - machine type is " + BaseConfiguration.getMachineType());
     }
-    
+
     // This is here solely so shutdown can be called on it when the application closes.
     public void setPreviewManager(PreviewManager previewManager) {
         this.previewManager = previewManager;
     }
 
-    private void loadProjectsAtStartup()
-    {
+    private void loadProjectsAtStartup() {
         steno.debug("start load projects");
         // Load up any projects that were open last time we shut down....
         ProjectManager pm = ProjectManager.getInstance();
         List<Project> preloadedProjects = pm.getOpenProjects();
 
-        for (int projectNumber = preloadedProjects.size() - 1; projectNumber >= 0; projectNumber--)
-        {
+        for (int projectNumber = preloadedProjects.size() - 1; projectNumber >= 0; projectNumber--) {
             Project project = preloadedProjects.get(projectNumber);
             ProjectTab newProjectTab = new ProjectTab(project, tabDisplay.widthProperty(),
                     tabDisplay.heightProperty(), true);
@@ -195,38 +171,31 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         steno.debug("end load projects");
     }
 
-    public void showAndSelectPrintProfile(RoboxProfile roboxProfile)
-    {
+    public void showAndSelectPrintProfile(RoboxProfile roboxProfile) {
         ApplicationStatus.getInstance().setMode(ApplicationMode.LIBRARY);
         Initializable initializable = insetPanelControllers.get(ApplicationMode.LIBRARY);
         LibraryMenuPanelController controller = (LibraryMenuPanelController) initializable;
         controller.showAndSelectPrintProfile(roboxProfile);
     }
 
-    public void showAndSelectCameraProfile(CameraProfile profile)
-    {
+    public void showAndSelectCameraProfile(CameraProfile profile) {
         ApplicationStatus.getInstance().setMode(ApplicationMode.LIBRARY);
         Initializable initializable = insetPanelControllers.get(ApplicationMode.LIBRARY);
         LibraryMenuPanelController controller = (LibraryMenuPanelController) initializable;
         controller.showAndSelectCameraProfile(profile);
     }
 
-    private void switchPagesForMode(ApplicationMode oldMode, ApplicationMode newMode)
-    {
+    private void switchPagesForMode(ApplicationMode oldMode, ApplicationMode newMode) {
         libraryModeEntered.set(false);
         infoScreenIndicatorController.setSelected(newMode == ApplicationMode.STATUS);
 
         // Remove the existing side panel
-        if (oldMode != null)
-        {
+        if (oldMode != null) {
             Pane lastInsetPanel = insetPanels.get(oldMode);
-            if (lastInsetPanel != null)
-            {
+            if (lastInsetPanel != null) {
                 interchangeablePanelAreaWithNotificationArea.getChildren().remove(lastInsetPanel);
-            } else
-            {
-                if (interchangeablePanelAreaWithNotificationArea.getChildren().contains(projectTabPaneHolder))
-                {
+            } else {
+                if (interchangeablePanelAreaWithNotificationArea.getChildren().contains(projectTabPaneHolder)) {
                     interchangeablePanelAreaWithNotificationArea.getChildren().remove(projectTabPaneHolder);
                 }
             }
@@ -234,8 +203,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
 
         // Now add the relevant new one...
         Pane newInsetPanel = insetPanels.get(newMode);
-        if (newInsetPanel != null)
-        {
+        if (newInsetPanel != null) {
             AnchorPane.setBottomAnchor(newInsetPanel, 0.0);
             AnchorPane.setTopAnchor(newInsetPanel, 0.0);
             AnchorPane.setLeftAnchor(newInsetPanel, 0.0);
@@ -244,48 +212,42 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         }
 
         if (null != newMode)
-        switch (newMode) {
-            case LAYOUT:
-                interchangeablePanelAreaWithNotificationArea.getChildren().add(0, projectTabPaneHolder);
-                //Switch tabs if necessary
-                if (tabDisplaySelectionModel.getSelectedItem() instanceof ProjectTab
-                        == false)
-                {
-                    if (lastLayoutTab != null
-                            && tabDisplay.getTabs().contains(lastLayoutTab))
-                    {
-                        //Select the last project tab
-                        tabDisplaySelectionModel.select(lastLayoutTab);
-                    } else
-                    {
-                        //Select either the first tab or the the + tab (so that a new project is added)
-                        tabDisplaySelectionModel.select(1);
+            switch (newMode) {
+                case LAYOUT:
+                    interchangeablePanelAreaWithNotificationArea.getChildren().add(0, projectTabPaneHolder);
+                    //Switch tabs if necessary
+                    if (tabDisplaySelectionModel.getSelectedItem() instanceof ProjectTab
+                            == false) {
+                        if (lastLayoutTab != null
+                                && tabDisplay.getTabs().contains(lastLayoutTab)) {
+                            //Select the last project tab
+                            tabDisplaySelectionModel.select(lastLayoutTab);
+                        } else {
+                            //Select either the first tab or the the + tab (so that a new project is added)
+                            tabDisplaySelectionModel.select(1);
+                        }
                     }
-                }   break;
-            case SETTINGS:
-                interchangeablePanelAreaWithNotificationArea.getChildren().add(0, projectTabPaneHolder);
-                break;
-            case STATUS:
-                interchangeablePanelAreaWithNotificationArea.getChildren().add(0, projectTabPaneHolder);
-                tabDisplaySelectionModel.select(0);
-                break;
-            case LIBRARY:
-                libraryModeEntered.set(true);
-                break;
-            default:
-                break;
-        }
+                    break;
+                case SETTINGS:
+                    interchangeablePanelAreaWithNotificationArea.getChildren().add(0, projectTabPaneHolder);
+                    break;
+                case STATUS:
+                    interchangeablePanelAreaWithNotificationArea.getChildren().add(0, projectTabPaneHolder);
+                    tabDisplaySelectionModel.select(0);
+                    break;
+                case LIBRARY:
+                    libraryModeEntered.set(true);
+                    break;
+                default:
+                    break;
+            }
     }
 
-    public static DisplayManager getInstance()
-    {
-        if (instance == null)
-        {
-            try
-            {
+    public static DisplayManager getInstance() {
+        if (instance == null) {
+            try {
                 instance = new DisplayManager();
-            } catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
@@ -297,8 +259,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
      * Show the spinner, and keep it centred on the given region.
      */
     @Override
-    public void startSpinning(Region centreRegion)
-    {
+    public void startSpinning(Region centreRegion) {
         spinner.setVisible(true);
         spinner.startSpinning();
         spinner.setCentreNode(centreRegion);
@@ -308,17 +269,15 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
      * Stop and hide the spinner.
      */
     @Override
-    public void stopSpinning()
-    {
+    public void stopSpinning() {
         spinner.setVisible(false);
         spinner.stopSpinning();
     }
 
     public void configureDisplayManager(Stage mainStage, String applicationName,
-            String modelsToLoadAtStartup_projectName,
-            List<String> modelsToLoadAtStartup,
-            boolean dontGroupStartupModels)
-    {
+                                        String modelsToLoadAtStartup_projectName,
+                                        List<String> modelsToLoadAtStartup,
+                                        boolean dontGroupStartupModels) {
         steno.debug("start configure display manager");
         this.mainStage = mainStage;
         mainStage.setTitle(applicationName + " - "
@@ -357,8 +316,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
 
         // Load in all of the side panels
         steno.debug("setup panels for mode");
-        for (ApplicationMode mode : ApplicationMode.values())
-        {
+        for (ApplicationMode mode : ApplicationMode.values()) {
             setupPanelsForMode(mode);
         }
 
@@ -366,14 +324,12 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         sidePanelContainer = new StackPane();
         HBox.setHgrow(sidePanelContainer, Priority.NEVER);
 
-        try
-        {
+        try {
             URL fxmlFileName = getClass().getResource(ApplicationConfiguration.fxmlPanelResourcePath + "printerStatusSidePanel.fxml");
             steno.debug("About to load side panel fxml: " + fxmlFileName);
             FXMLLoader sidePanelLoader = new FXMLLoader(fxmlFileName, BaseLookup.getLanguageBundle());
             sidePanel = (VBox) sidePanelLoader.load();
-        } catch (Exception ex)
-        {
+        } catch (Exception ex) {
             steno.exception("Couldn't load side panel", ex);
         }
         sidePanelContainer.getChildren().add(sidePanel);
@@ -417,11 +373,10 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         AnchorPane.setRightAnchor(tabDisplay, 0.0);
 
         // The printer status tab will always be visible - the page is static
-        try
-        {
+        try {
             FXMLLoader printerStatusPageLoader = new FXMLLoader(getClass().getResource(
                     ApplicationConfiguration.fxmlResourcePath
-                    + "PrinterStatusPage.fxml"), BaseLookup.getLanguageBundle());
+                            + "PrinterStatusPage.fxml"), BaseLookup.getLanguageBundle());
             AnchorPane printerStatusPage = printerStatusPageLoader.load();
             PrinterStatusPageController printerStatusPageController = printerStatusPageLoader.
                     getController();
@@ -431,7 +386,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             printerStatusTab = new Tab();
             FXMLLoader printerStatusPageLabelLoader = new FXMLLoader(getClass().getResource(
                     ApplicationConfiguration.fxmlResourcePath
-                    + "infoScreenIndicator.fxml"), BaseLookup.getLanguageBundle());
+                            + "infoScreenIndicator.fxml"), BaseLookup.getLanguageBundle());
             VBox printerStatusLabelGroup = printerStatusPageLabelLoader.load();
             infoScreenIndicatorController = printerStatusPageLabelLoader.getController();
             printerStatusTab.setGraphic(printerStatusLabelGroup);
@@ -442,42 +397,33 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             tabDisplaySelectionModel.selectedItemProperty().addListener(
                     (ObservableValue<? extends Tab> ov, Tab lastTab, Tab newTab) ->
                     {
-                        if (newTab == addPageTab)
-                        {
+                        if (newTab == addPageTab) {
                             createAndAddNewProjectTab();
 
-                            if (applicationStatus.getMode() != ApplicationMode.LAYOUT)
-                            {
+                            if (applicationStatus.getMode() != ApplicationMode.LAYOUT) {
                                 applicationStatus.setMode(ApplicationMode.LAYOUT);
                             }
-                        } else if (newTab instanceof ProjectTab)
-                        {
-                            if (applicationStatus.getMode() != ApplicationMode.LAYOUT)
-                            {
+                        } else if (newTab instanceof ProjectTab) {
+                            if (applicationStatus.getMode() != ApplicationMode.LAYOUT) {
                                 applicationStatus.setMode(ApplicationMode.LAYOUT);
                             }
 
-                            if (lastTab != newTab)
-                            {
+                            if (lastTab != newTab) {
                                 ProjectTab projectTab = (ProjectTab) tabDisplaySelectionModel.getSelectedItem();
                                 projectTab.fireProjectSelected();
                             }
-                        } else
-                        {
+                        } else {
                             //Going to status
-                            if (lastTab instanceof ProjectTab)
-                            {
+                            if (lastTab instanceof ProjectTab) {
                                 lastLayoutTab = lastTab;
                             }
 
-                            if (applicationStatus.getMode() != ApplicationMode.STATUS)
-                            {
+                            if (applicationStatus.getMode() != ApplicationMode.STATUS) {
                                 applicationStatus.setMode(ApplicationMode.STATUS);
                             }
                         }
-                        
-                        if (lastTab instanceof ProjectTab)
-                        {
+
+                        if (lastTab instanceof ProjectTab) {
                             ProjectTab lastProjectTab = (ProjectTab) lastTab;
                             lastProjectTab.fireProjectDeselected();
                         }
@@ -488,8 +434,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             AnchorPane.setRightAnchor(notificationArea, 0.0);
             interchangeablePanelAreaWithNotificationArea.getChildren().add(notificationArea);
             projectTabPaneHolder.getChildren().add(tabDisplay);
-        } catch (IOException ex)
-        {
+        } catch (IOException ex) {
             steno.exception("Failed to load printer status page", ex);
         }
 
@@ -501,16 +446,14 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
 
         applicationStatus.setMode(ApplicationMode.STATUS);
 
-        try
-        {
+        try {
             URL menuStripURL = getClass().getResource(ApplicationConfiguration.fxmlPanelResourcePath
                     + "LayoutStatusMenuStrip.fxml");
             FXMLLoader menuStripLoader = new FXMLLoader(menuStripURL, BaseLookup.getLanguageBundle());
             VBox menuStripControls = (VBox) menuStripLoader.load();
             menuStripControls.prefWidthProperty().bind(projectTabPaneHolder.widthProperty());
             projectTabPaneHolder.getChildren().add(menuStripControls);
-        } catch (IOException ex)
-        {
+        } catch (IOException ex) {
             steno.exception("Failed to load menu strip controls", ex);
         }
 
@@ -521,52 +464,42 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
 
         scene.getStylesheets().add(ApplicationConfiguration.getMainCSSFile());
 
-        scene.widthProperty().addListener(new ChangeListener<Number>()
-        {
+        scene.widthProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(
-                    ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
+                    ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 whenWindowChangesSize();
             }
         });
 
-        scene.heightProperty().addListener(new ChangeListener<Number>()
-        {
+        scene.heightProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(
-                    ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
+                    ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 whenWindowChangesSize();
             }
         });
 
-        projectTabPaneHolder.widthProperty().addListener(new ChangeListener<Number>()
-        {
+        projectTabPaneHolder.widthProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(
-                    ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
+                    ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 whenWindowChangesSize();
             }
         });
 
-        mainStage.maximizedProperty().addListener(new ChangeListener<Boolean>()
-        {
+        mainStage.maximizedProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(
-                    ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue)
-            {
+                    ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 whenWindowChangesSize();
             }
         });
 
-        mainStage.fullScreenProperty().addListener(new ChangeListener<Boolean>()
-        {
+        mainStage.fullScreenProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(
-                    ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue)
-            {
+                    ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 steno.debug("Stage fullscreen = " + newValue.booleanValue());
                 whenWindowChangesSize();
             }
@@ -590,7 +523,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         addPageTab.setText("+");
         addPageTab.setClosable(false);
         tabDisplay.getTabs().add(addPageTab);
-        
+
         // Create ContextMenu for addPageTab.
         ContextMenu contextMenu = new ContextMenu();
         MenuItem item1 = new MenuItem("Open Project ...");
@@ -611,49 +544,45 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
 
         steno.debug("end configure display manager");
     }
-    
-    private void openProject()
-    {
+
+    private void openProject() {
         FileChooser projectChooser = new FileChooser();
         projectChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Robox Project", "*.robox"));
         projectChooser.setInitialDirectory(new File(ApplicationConfiguration.getProjectDirectory()));
-        List<File> files =  projectChooser.showOpenMultipleDialog(getMainStage());
+        List<File> files = projectChooser.showOpenMultipleDialog(getMainStage());
         if (files != null && !files.isEmpty()) {
             files.forEach(projectFile ->
-                {
-                    loadProject(projectFile);
-                });
+            {
+                loadProject(projectFile);
+            });
         }
     }
 
-    private void setupPanelsForMode(ApplicationMode mode)
-    {
-        try
-        {
+    private void setupPanelsForMode(ApplicationMode mode) {
+        try {
             URL fxmlFileName = getClass().getResource(mode.getInsetPanelFXMLName());
-            if (fxmlFileName != null)
-            {
+            if (fxmlFileName != null) {
                 steno.debug("About to load inset panel fxml: " + fxmlFileName);
+                Class<?> types = mode.getControllerClass();
+                Constructor<?> cons = types.getDeclaredConstructor();
                 FXMLLoader insetPanelLoader = new FXMLLoader(fxmlFileName,
                         BaseLookup.getLanguageBundle());
-                insetPanelLoader.setController(mode.getControllerClass().newInstance());
+                insetPanelLoader.setController(cons.newInstance());
                 Pane insetPanel = (Pane) insetPanelLoader.load();
                 Initializable insetPanelController = insetPanelLoader.getController();
                 insetPanel.setId(mode.name());
                 insetPanels.put(mode, insetPanel);
                 insetPanelControllers.put(mode, insetPanelController);
             }
-        } catch (Exception ex)
-        {
+        } catch (Exception ex) {
             insetPanels.put(mode, null);
             insetPanelControllers.put(mode, null);
             steno.exception("Couldn't load inset panel for mode:" + mode, ex);
         }
     }
 
-    private ProjectTab createAndAddNewProjectTab()
-    {
+    private ProjectTab createAndAddNewProjectTab() {
         ProjectTab projectTab = new ProjectTab(tabDisplay.widthProperty(),
                 tabDisplay.heightProperty());
         tabDisplay.getTabs().add(tabDisplay.getTabs().size() - 1, projectTab);
@@ -662,55 +591,47 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         return projectTab;
     }
 
-    public Rectangle2D getNormalisedPreviewRectangle()
-    {
+    public Rectangle2D getNormalisedPreviewRectangle() {
         Rectangle2D nRectangle = null;
         Tab currentTab = tabDisplaySelectionModel.getSelectedItem();
 
-        if (currentTab instanceof ProjectTab)
-        {
-            ProjectTab currentProjectTab = (ProjectTab)currentTab;
-            Rectangle2D previewBounds =  currentProjectTab.getPreviewRectangle();
+        if (currentTab instanceof ProjectTab) {
+            ProjectTab currentProjectTab = (ProjectTab) currentTab;
+            Rectangle2D previewBounds = currentProjectTab.getPreviewRectangle();
             Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
-            nRectangle = new Rectangle2D(previewBounds.getMinX() / primaryScreenBounds.getWidth(), 
-                                         previewBounds.getMinY() / primaryScreenBounds.getHeight(),
-                                         previewBounds.getWidth() / primaryScreenBounds.getWidth(),
-                                         previewBounds.getHeight() / primaryScreenBounds.getHeight());
+            nRectangle = new Rectangle2D(previewBounds.getMinX() / primaryScreenBounds.getWidth(),
+                    previewBounds.getMinY() / primaryScreenBounds.getHeight(),
+                    previewBounds.getWidth() / primaryScreenBounds.getWidth(),
+                    previewBounds.getHeight() / primaryScreenBounds.getHeight());
         }
         return nRectangle;
     }
-        
-    public static Stage getMainStage()
-    {
+
+    public static Stage getMainStage() {
         return mainStage;
     }
 
-    public ProjectTab getTabForProject(Project project)
-    {
+    public ProjectTab getTabForProject(Project project) {
         ProjectTab pTab = null;
         if (tabDisplay != null) {
             pTab = tabDisplay.getTabs()
-                             .filtered((t) -> ((t instanceof ProjectTab) && ((ProjectTab)t).getProject() == project))
-                             .stream().map((t) -> ((ProjectTab)t)).findAny().orElse(null);
+                    .filtered((t) -> ((t instanceof ProjectTab) && ((ProjectTab) t).getProject() == project))
+                    .stream().map((t) -> ((ProjectTab) t)).findAny().orElse(null);
         }
         return pTab;
     }
-    
-    public void shutdown()
-    {
+
+    public void shutdown() {
         // This is here solely so it shutdown can be called on it when the application closes.
-        if (previewManager != null)
-        {
+        if (previewManager != null) {
             previewManager.shutdown();
         }
-        
-        if (projectManager != null)
-        {
+
+        if (projectManager != null) {
             projectManager.saveState();
         }
 
-        if (tabDisplay != null)
-        {
+        if (tabDisplay != null) {
             tabDisplay.getTabs().stream().filter((tab) -> (tab instanceof ProjectTab)).forEach(
                     (tab) ->
                     {
@@ -725,49 +646,39 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
      * @param event
      */
     @Override
-    public void handle(KeyEvent event)
-    {
-        if (applicationStatus.getMode() == ApplicationMode.LAYOUT)
-        {
+    public void handle(KeyEvent event) {
+        if (applicationStatus.getMode() == ApplicationMode.LAYOUT) {
             Tab currentTab = tabDisplaySelectionModel.getSelectedItem();
-            if (currentTab instanceof ProjectTab)
-            {
+            if (currentTab instanceof ProjectTab) {
                 Project project = Lookup.getSelectedProjectProperty().get();
                 UndoableProject undoableProject = new UndoableProject(project);
-                switch (event.getCode())
-                {
+                switch (event.getCode()) {
                     case DELETE:
                     case BACK_SPACE:
-                        if (Lookup.getProjectGUIState(project) != null)
-                        {
-                            if (Lookup.getProjectGUIState(project).getProjectGUIRules().canRemoveOrDuplicateSelection().get())
-                            {
+                        if (Lookup.getProjectGUIState(project) != null) {
+                            if (Lookup.getProjectGUIState(project).getProjectGUIRules().canRemoveOrDuplicateSelection().get()) {
                                 deleteSelectedModels(project, undoableProject);
                             }
                         }
                         event.consume();
                         break;
                     case A:
-                        if (event.isShortcutDown())
-                        {
+                        if (event.isShortcutDown()) {
                             selectAllModels(project);
                             event.consume();
                         }
                         break;
                     case Z:
-                        if (event.isShortcutDown() && (!event.isShiftDown()))
-                        {
+                        if (event.isShortcutDown() && (!event.isShiftDown())) {
                             undoCommand(project);
                             event.consume();
-                        } else if (event.isShortcutDown() && event.isShiftDown())
-                        {
+                        } else if (event.isShortcutDown() && event.isShiftDown()) {
                             redoCommand(project);
                             event.consume();
                         }
                         break;
                     case Y:
-                        if (event.isShortcutDown())
-                        {
+                        if (event.isShortcutDown()) {
                             redoCommand(project);
                             event.consume();
                         }
@@ -777,10 +688,8 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
                 }
             }
         } else if (applicationStatus.getMode() == ApplicationMode.STATUS
-                && Lookup.getUserPreferences().isAdvancedMode())
-        {
-            switch (event.getCode())
-            {
+                && Lookup.getUserPreferences().isAdvancedMode()) {
+            switch (event.getCode()) {
                 case G:
                     Lookup.getUserPreferences().setShowGCode(true);
                     break;
@@ -788,56 +697,44 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         }
     }
 
-    private void selectAllModels(Project project)
-    {
+    private void selectAllModels(Project project) {
         ProjectSelection projectSelection
                 = Lookup.getProjectGUIState(project).getProjectSelection();
-        for (ProjectifiableThing modelContainer : project.getTopLevelThings())
-        {
+        for (ProjectifiableThing modelContainer : project.getTopLevelThings()) {
             projectSelection.addSelectedItem(modelContainer);
         }
     }
 
-    private void deleteSelectedModels(Project project, UndoableProject undoableProject)
-    {
+    private void deleteSelectedModels(Project project, UndoableProject undoableProject) {
         Set<ProjectifiableThing> selectedModels
                 = Lookup.getProjectGUIState(project).getProjectSelection().
                 getSelectedModelsSnapshot();
         undoableProject.deleteModels(selectedModels);
     }
 
-    private void undoCommand(Project project)
-    {
+    private void undoCommand(Project project) {
         CommandStack commandStack = Lookup.getProjectGUIState(project).getCommandStack();
-        if (commandStack.getCanUndo().get())
-        {
-            try
-            {
+        if (commandStack.getCanUndo().get()) {
+            try {
                 commandStack.undo();
-            } catch (CommandStack.UndoException ex)
-            {
+            } catch (CommandStack.UndoException ex) {
                 steno.debug("cannot undo " + ex);
             }
         }
     }
 
-    private void redoCommand(Project project)
-    {
+    private void redoCommand(Project project) {
         CommandStack commandStack = Lookup.getProjectGUIState(project).getCommandStack();
-        if (commandStack.getCanRedo().get())
-        {
-            try
-            {
+        if (commandStack.getCanRedo().get()) {
+            try {
                 commandStack.redo();
-            } catch (CommandStack.UndoException ex)
-            {
+            } catch (CommandStack.UndoException ex) {
                 steno.debug("cannot undo " + ex);
             }
         }
     }
 
-    public PurgeInsetPanelController getPurgeInsetPanelController()
-    {
+    public PurgeInsetPanelController getPurgeInsetPanelController() {
         return (PurgeInsetPanelController) insetPanelControllers.get(ApplicationMode.PURGE);
     }
 
@@ -845,37 +742,28 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
      * This is fired when the main window or one of the internal windows may
      * have changed size.
      */
-    private void whenWindowChangesSize()
-    {
+    private void whenWindowChangesSize() {
         nodesMayHaveMoved.set(!nodesMayHaveMoved.get());
 
 //        steno.info("Window size change: " + scene.getWidth() + " : " + scene.getHeight());
-        if (scene.getHeight() < VERY_SHORT_SCALE_BELOW_HEIGHT)
-        {
-            if (displayScalingModeProperty.get() != DisplayScalingMode.VERY_SHORT)
-            {
+        if (scene.getHeight() < VERY_SHORT_SCALE_BELOW_HEIGHT) {
+            if (displayScalingModeProperty.get() != DisplayScalingMode.VERY_SHORT) {
                 displayScalingModeProperty.set(DisplayScalingMode.VERY_SHORT);
             }
-        } else if (scene.getHeight() < SHORT_SCALE_BELOW_HEIGHT)
-        {
-            if (displayScalingModeProperty.get() != DisplayScalingMode.SHORT)
-            {
+        } else if (scene.getHeight() < SHORT_SCALE_BELOW_HEIGHT) {
+            if (displayScalingModeProperty.get() != DisplayScalingMode.SHORT) {
                 displayScalingModeProperty.set(DisplayScalingMode.SHORT);
             }
-        } else
-        {
-            if (displayScalingModeProperty.get() != DisplayScalingMode.NORMAL)
-            {
+        } else {
+            if (displayScalingModeProperty.get() != DisplayScalingMode.NORMAL) {
                 displayScalingModeProperty.set(DisplayScalingMode.NORMAL);
             }
         }
 
         double scaleFactor = 1.0;
-        if (scene.getHeight() < START_SCALING_WINDOW_HEIGHT)
-        {
+        if (scene.getHeight() < START_SCALING_WINDOW_HEIGHT) {
             scaleFactor = scene.getHeight() / START_SCALING_WINDOW_HEIGHT;
-            if (scaleFactor < MINIMUM_SCALE_FACTOR)
-            {
+            if (scaleFactor < MINIMUM_SCALE_FACTOR) {
                 scaleFactor = MINIMUM_SCALE_FACTOR;
             }
         }
@@ -890,17 +778,15 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         rootAnchorPane.setMinHeight(scene.getHeight() / scaleFactor);
     }
 
-    public ReadOnlyBooleanProperty nodesMayHaveMovedProperty()
-    {
+    public ReadOnlyBooleanProperty nodesMayHaveMovedProperty() {
         return nodesMayHaveMoved;
     }
 
     @Override
-    public boolean trigger(String commandSequence, String capturedParameter)
-    {
+    public boolean trigger(String commandSequence, String capturedParameter) {
         boolean handled = false;
 
-        switch (commandSequence)        {
+        switch (commandSequence) {
             case addDummyPrinterCommand:
                 RoboxCommsManager.getInstance().addDummyPrinter(false);
                 handled = true;
@@ -921,8 +807,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
     }
 
     @Override
-    public void unhandledKeyEvent(KeyEvent keyEvent)
-    {
+    public void unhandledKeyEvent(KeyEvent keyEvent) {
         //Try sending the keyEvent to the in-focus project
         handle(keyEvent);
     }
@@ -930,68 +815,57 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
     private void loadProject(File projectFile) {
         try {
             Project p = projectManager.getProjectIfOpen(FilenameUtils.getBaseName(projectFile.getName()))
-                .orElseGet(() ->
-                {
-                    Project newProject = ProjectManager.loadProject(projectFile.getAbsolutePath());
-                    if (newProject != null)
+                    .orElseGet(() ->
                     {
-                        ProjectTab newProjectTab = new ProjectTab(newProject,
-                                                                  tabDisplay.widthProperty(),
-                                                                  tabDisplay.heightProperty(),
-                                                                  false
-                        );
+                        Project newProject = ProjectManager.loadProject(projectFile.getAbsolutePath());
+                        if (newProject != null) {
+                            ProjectTab newProjectTab = new ProjectTab(newProject,
+                                    tabDisplay.widthProperty(),
+                                    tabDisplay.heightProperty(),
+                                    false
+                            );
 
-                        tabDisplay.getTabs().add(tabDisplay.getTabs().size() - 1, newProjectTab);
-                    }
-                    return newProject;
-                });
-            if (p != null)
-            {
+                            tabDisplay.getTabs().add(tabDisplay.getTabs().size() - 1, newProjectTab);
+                        }
+                        return newProject;
+                    });
+            if (p != null) {
                 ProjectTab pt = getTabForProject(p);
                 tabDisplaySelectionModel.select(pt);
-                if (applicationStatus.getMode() != ApplicationMode.LAYOUT)
-                {
+                if (applicationStatus.getMode() != ApplicationMode.LAYOUT) {
                     applicationStatus.setMode(ApplicationMode.LAYOUT);
                 }
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             steno.exception("Failed to open project", ex);
         }
     }
-    
-    private void configureProjectDragNDrop(Node basePane)
-    {
+
+    private void configureProjectDragNDrop(Node basePane) {
         basePane.setOnDragOver((DragEvent event) ->
         {
-            if (event.getGestureSource() != basePane)
-            {
+            if (event.getGestureSource() != basePane) {
                 Dragboard dragboard = event.getDragboard();
-                if (dragboard.hasFiles())
-                {
+                if (dragboard.hasFiles()) {
                     List<File> fileList = dragboard.getFiles();
                     boolean accept = true;
-                    for (File file : fileList)
-                    {
+                    for (File file : fileList) {
                         boolean extensionFound = false;
 
                         if (file.getName().toUpperCase().endsWith(
                                 ApplicationConfiguration.projectFileExtension
-                                .toUpperCase()))
-                        {
+                                        .toUpperCase())) {
                             extensionFound = true;
                             break;
                         }
 
-                        if (!extensionFound)
-                        {
+                        if (!extensionFound) {
                             accept = false;
                             break;
                         }
                     }
 
-                    if (accept)
-                    {
+                    if (accept) {
                         event.acceptTransferModes(TransferMode.COPY);
                     }
                 }
@@ -1005,35 +879,28 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             /* the drag-and-drop gesture entered the target */
             /* show to the user that it is an actual gesture target */
             if (ApplicationStatus.getInstance().modeProperty().getValue()
-                    == ApplicationMode.LAYOUT)
-            {
-                if (event.getGestureSource() != basePane)
-                {
+                    == ApplicationMode.LAYOUT) {
+                if (event.getGestureSource() != basePane) {
                     Dragboard dragboard = event.getDragboard();
-                    if (dragboard.hasFiles())
-                    {
+                    if (dragboard.hasFiles()) {
                         List<File> fileList = dragboard.getFiles();
                         boolean accept = true;
-                        for (File file : fileList)
-                        {
+                        for (File file : fileList) {
                             boolean extensionFound = false;
                             if (file.getName().toUpperCase().endsWith(
                                     ApplicationConfiguration.projectFileExtension
-                                    .toUpperCase()))
-                            {
+                                            .toUpperCase())) {
                                 extensionFound = true;
                                 break;
                             }
 
-                            if (!extensionFound)
-                            {
+                            if (!extensionFound) {
                                 accept = false;
                                 break;
                             }
                         }
 
-                        if (accept)
-                        {
+                        if (accept) {
                             basePane.setEffect(new Glow());
                         }
                     }
@@ -1057,15 +924,13 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             /* if there is a string data on dragboard, read it and use it */
             Dragboard db = event.getDragboard();
             boolean success = false;
-            if (db.hasFiles())
-            {
+            if (db.hasFiles()) {
                 db.getFiles().forEach(file ->
                 {
                     loadProject(file);
                 });
 
-            } else
-            {
+            } else {
                 steno.error("No files in dragboard");
             }
             /* let the source know whether the string was successfully
@@ -1076,24 +941,20 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
         });
     }
 
-    public ReadOnlyObjectProperty<DisplayScalingMode> getDisplayScalingModeProperty()
-    {
+    public ReadOnlyObjectProperty<DisplayScalingMode> getDisplayScalingModeProperty() {
         return displayScalingModeProperty;
     }
 
-    public void loadModelsIntoNewProject(String projectName, List<String> modelsWithPaths, boolean dontGroupModels)
-    {
+    public void loadModelsIntoNewProject(String projectName, List<String> modelsWithPaths, boolean dontGroupModels) {
         List<File> listOfFiles = new ArrayList<>();
 
         if (modelsWithPaths != null
-                && modelsWithPaths.size() > 0)
-        {
+                && modelsWithPaths.size() > 0) {
             modelsWithPaths.forEach(modelRef ->
             {
                 File fileRef = new File(modelRef);
 
-                if (fileRef.exists())
-                {
+                if (fileRef.exists()) {
                     listOfFiles.add(fileRef);
                 }
             });
@@ -1112,8 +973,7 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             tabDisplay.getSelectionModel().select(projectTab);
         };
 
-        if (Lookup.getUserPreferences().isFirstUse())
-        {
+        if (Lookup.getUserPreferences().isFirstUse()) {
             File firstUsePrintFile = new File(BaseConfiguration.
                     getApplicationModelDirectory().concat("RBX_ROBOT_MM.stl"));
 
@@ -1124,15 +984,11 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             fileToLoad.add(firstUsePrintFile);
             ModelLoader loader = new ModelLoader();
 
-            if (listOfFiles.size() > 0)
-            {
-                ChangeListener<Boolean> firstUseModelLoadListener = new ChangeListener<Boolean>()
-                {
+            if (listOfFiles.size() > 0) {
+                ChangeListener<Boolean> firstUseModelLoadListener = new ChangeListener<Boolean>() {
                     @Override
-                    public void changed(ObservableValue<? extends Boolean> ov, Boolean wasRunning, Boolean isRunning)
-                    {
-                        if (wasRunning && !isRunning)
-                        {
+                    public void changed(ObservableValue<? extends Boolean> ov, Boolean wasRunning, Boolean isRunning) {
+                        if (wasRunning && !isRunning) {
                             BaseLookup.getTaskExecutor().runOnGUIThread(loaderRunnable);
                             loader.modelLoadingProperty().removeListener(this);
                         }
@@ -1148,39 +1004,32 @@ public class DisplayManager implements EventHandler<KeyEvent>, KeyCommandListene
             tabDisplay.getTabs().add(1, projectTab);
 
             Lookup.getUserPreferences().setFirstUse(false);
-        } else if (listOfFiles.size() > 0)
-        {
+        } else if (listOfFiles.size() > 0) {
             BaseLookup.getTaskExecutor().runOnGUIThread(loaderRunnable);
         }
     }
 
     @Override
-    public void modelAddedToProject(Project project)
-    {
-        if (tabDisplay.getSelectionModel().getSelectedItem() instanceof ProjectTab)
-        {
+    public void modelAddedToProject(Project project) {
+        if (tabDisplay.getSelectionModel().getSelectedItem() instanceof ProjectTab) {
             ((ProjectTab) tabDisplay.getSelectionModel().getSelectedItem()).modelAddedToProject(project);
         }
 
         if (Lookup.getSelectedProjectProperty().get() == null
-                || Lookup.getSelectedProjectProperty().get() != project)
-        {
+                || Lookup.getSelectedProjectProperty().get() != project) {
             Lookup.setSelectedProject(project);
         }
     }
 
-    public void initialiseBlank3DProject()
-    {
+    public void initialiseBlank3DProject() {
         ((ProjectTab) tabDisplay.getSelectionModel().getSelectedItem()).initialiseBlank3DProject();
     }
 
-    public void initialiseBlank2DProject()
-    {
+    public void initialiseBlank2DProject() {
         ((ProjectTab) tabDisplay.getSelectionModel().getSelectedItem()).initialiseBlank2DProject();
     }
-    
-    public BooleanProperty libraryModeEnteredProperty()
-    {
+
+    public BooleanProperty libraryModeEnteredProperty() {
         return libraryModeEntered;
     }
 }

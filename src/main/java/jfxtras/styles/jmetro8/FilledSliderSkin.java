@@ -1,6 +1,6 @@
 package jfxtras.styles.jmetro8;
 
-import com.sun.javafx.scene.control.behavior.*;
+import com.sun.javafx.scene.control.behavior.SliderBehavior;
 import javafx.animation.Transition;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
@@ -354,8 +354,8 @@ public class FilledSliderSkin extends SkinBase<Slider>
     {
         // calculate the available space
         // resize thumb to preferred size
-        thumbWidth = snapSize(thumb.prefWidth(-1));
-        thumbHeight = snapSize(thumb.prefHeight(-1));
+        thumbWidth = snapSizeX(thumb.prefWidth(-1));
+        thumbHeight = snapSizeY(thumb.prefHeight(-1));
         thumb.resize(thumbWidth, thumbHeight);
         // we are assuming the is common radius's for all corners on the track
         double trackRadius = track.getBackground() == null ? 0 : track.getBackground().getFills().size() > 0
@@ -364,12 +364,12 @@ public class FilledSliderSkin extends SkinBase<Slider>
         if (getSkinnable().getOrientation() == Orientation.HORIZONTAL)
         {
             double tickLineHeight = (showTickMarks) ? tickLine.prefHeight(-1) : 0;
-            double trackHeight = snapSize(track.prefHeight(-1));
+            double trackHeight = snapSizeY(track.prefHeight(-1));
             double trackAreaHeight = Math.max(trackHeight, thumbHeight);
             double totalHeightNeeded = trackAreaHeight + ((showTickMarks) ? trackToTickGap + tickLineHeight : 0);
             double startY = y + ((h - totalHeightNeeded) / 2); // center slider in available height vertically
-            trackLength = snapSize(w - thumbWidth);
-            trackStart = snapPosition(x + (thumbWidth / 2));
+            trackLength = snapSizeX(w - thumbWidth);
+            trackStart = snapPositionX(x + (thumbWidth / 2));
             double trackTop = (int) (startY + ((trackAreaHeight - trackHeight) / 2));
             thumbTop = (int) (startY + ((trackAreaHeight - thumbHeight) / 2));
 
@@ -408,12 +408,12 @@ public class FilledSliderSkin extends SkinBase<Slider>
         } else
         {
             double tickLineWidth = (showTickMarks) ? tickLine.prefWidth(-1) : 0;
-            double trackWidth = snapSize(track.prefWidth(-1));
+            double trackWidth = snapSizeY(track.prefWidth(-1));
             double trackAreaWidth = Math.max(trackWidth, thumbWidth);
             double totalWidthNeeded = trackAreaWidth + ((showTickMarks) ? trackToTickGap + tickLineWidth : 0);
             double startX = x + ((w - totalWidthNeeded) / 2); // center slider in available width horizontally
-            trackLength = snapSize(h - thumbHeight);
-            trackStart = snapPosition(y + (thumbHeight / 2));
+            trackLength = snapSizeX(h - thumbHeight);
+            trackStart = snapPositionY(y + (thumbHeight / 2));
             double trackLeft = (int) (startX + ((trackAreaWidth - trackWidth) / 2));
             thumbLeft = (int) (startX + ((trackAreaWidth - thumbWidth) / 2));
 

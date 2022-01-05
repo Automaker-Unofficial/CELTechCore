@@ -13,11 +13,12 @@ import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.utils.tasks.Cancellable;
-import java.util.Optional;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.Label;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
+
+import java.util.Optional;
 
 /**
  * This class uses SlicerTask and PostProcessorTask to get the estimated time,
